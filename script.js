@@ -254,24 +254,7 @@
     return { worldW, worldH };
   }
 
-  // Tracks every pointer on the page (capture phase runs before any stopPropagation),
-  // so multi-touch gestures can be detected regardless of which element they started on.
-  const globalPointerIds = new Set();
   let activeDrag = null;
-
-  document.addEventListener('pointerdown', (e) => {
-    globalPointerIds.add(e.pointerId);
-    if (globalPointerIds.size > 1 && activeDrag) {
-      activeDrag.cancel();
-      activeDrag = null;
-    }
-  }, true);
-
-  function untrackGlobalPointer(e) {
-    globalPointerIds.delete(e.pointerId);
-  }
-  document.addEventListener('pointerup', untrackGlobalPointer, true);
-  document.addEventListener('pointercancel', untrackGlobalPointer, true);
 
   // --- Dragging an individual photo ---
   function makePhotoDraggable(el) {
@@ -283,7 +266,7 @@
 
     el.addEventListener('pointerdown', (e) => {
       if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
-      if (globalPointerIds.size > 1) return; // a second finger is already down elsewhere; let the board pan/pinch
+      if (activePointers.size > 1) return; // a second finger is already down elsewhere; let the board pan/pinch
       e.stopPropagation();
       dragging = true;
       el.setPointerCapture(e.pointerId);
@@ -331,6 +314,8 @@
   }
 
   // --- Panning the board + pinch-to-zoom ---
+  // Tracked at the document level (capture phase) so positions are recorded for every
+  // pointer, even ones that started on a photo, letting pinch math use both fingers.
   const activePointers = new Map();
   let panning = false;
   let panStartX = 0;
@@ -352,29 +337,37 @@
     return { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
   }
 
-  viewport.addEventListener('pointerdown', (e) => {
+  document.addEventListener('pointerdown', (e) => {
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    viewport.setPointerCapture(e.pointerId);
 
-    if (activePointers.size === 1) {
+    if (activePointers.size >= 2) {
+      if (activeDrag) {
+        activeDrag.cancel();
+        activeDrag = null;
+      }
+      panning = false;
+      pinchStartDist = pointerDistance();
+      pinchStartScale = scale;
+      return;
+    }
+
+    // A single pointer only starts a board pan if it didn't land on a photo;
+    // photos claim single-finger touches themselves to drag/select instead.
+    if (!e.target.closest('.polaroid')) {
       panning = true;
       viewport.classList.add('viewport--panning');
       panStartX = e.clientX;
       panStartY = e.clientY;
       panStartTx = tx;
       panStartTy = ty;
-    } else if (activePointers.size === 2) {
-      panning = false;
-      pinchStartDist = pointerDistance();
-      pinchStartScale = scale;
     }
-  });
+  }, true);
 
-  viewport.addEventListener('pointermove', (e) => {
+  document.addEventListener('pointermove', (e) => {
     if (!activePointers.has(e.pointerId)) return;
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    if (activePointers.size === 2) {
+    if (activePointers.size >= 2) {
       const dist = pointerDistance();
       const mid = pointerMidpoint();
       const ratio = dist / (pinchStartDist || dist);
@@ -384,7 +377,7 @@
       ty = panStartTy + (e.clientY - panStartY);
       applyTransform();
     }
-  });
+  }, true);
 
   function releasePointer(e) {
     if (activePointers.size === 1 && panning) {
@@ -392,7 +385,6 @@
       if (moved < TAP_THRESHOLD) deselectPhoto();
     }
     activePointers.delete(e.pointerId);
-    try { viewport.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ }
     if (activePointers.size === 0) {
       panning = false;
       viewport.classList.remove('viewport--panning');
@@ -407,8 +399,8 @@
     }
   }
 
-  viewport.addEventListener('pointerup', releasePointer);
-  viewport.addEventListener('pointercancel', releasePointer);
+  document.addEventListener('pointerup', releasePointer, true);
+  document.addEventListener('pointercancel', releasePointer, true);
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') deselectPhoto();

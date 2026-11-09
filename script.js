@@ -324,6 +324,8 @@
   let panStartTy = 0;
   let pinchStartDist = 0;
   let pinchStartScale = 1;
+  let pinchAnchorWorldX = 0;
+  let pinchAnchorWorldY = 0;
 
   function pointerDistance() {
     const pts = [...activePointers.values()];
@@ -348,6 +350,9 @@
       panning = false;
       pinchStartDist = pointerDistance();
       pinchStartScale = scale;
+      const mid = pointerMidpoint();
+      pinchAnchorWorldX = (mid.x - tx) / scale;
+      pinchAnchorWorldY = (mid.y - ty) / scale;
       return;
     }
 
@@ -371,7 +376,12 @@
       const dist = pointerDistance();
       const mid = pointerMidpoint();
       const ratio = dist / (pinchStartDist || dist);
-      zoomAt(mid.x, mid.y, pinchStartScale * ratio);
+      const newScale = clampScale(pinchStartScale * ratio);
+      // Re-anchor to the live midpoint so the gesture pans as well as zooms.
+      tx = mid.x - newScale * pinchAnchorWorldX;
+      ty = mid.y - newScale * pinchAnchorWorldY;
+      scale = newScale;
+      applyTransform();
     } else if (panning) {
       tx = panStartTx + (e.clientX - panStartX);
       ty = panStartTy + (e.clientY - panStartY);

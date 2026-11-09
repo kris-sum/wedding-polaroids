@@ -1,0 +1,198 @@
+:root {
+  color-scheme: light;
+  --bg: #cfcac1;
+  --board: #e9e4d8;
+  --ink: #332b22;
+  --accent: #7a5c3e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+}
+
+.toolbar__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.toolbar__controls {
+  display: flex;
+  gap: 8px;
+}
+
+.toolbar__btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.toolbar__btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.toolbar__btn:active {
+  transform: translateY(1px);
+}
+
+.hint {
+  position: fixed;
+  top: 58px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  background:
+    radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--board);
+}
+
+.viewport--panning {
+  cursor: grabbing;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.polaroid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 212px;
+  height: 338px;
+  background: #fffdf8;
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 18px rgba(0, 0, 0, 0.2);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.polaroid:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(0, 0, 0, 0.25);
+}
+
+.polaroid--dragging {
+  cursor: grabbing;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  transition: none;
+}
+
+.polaroid--selected {
+  box-shadow: 0 0 0 3px var(--accent), 0 10px 26px rgba(0, 0, 0, 0.4);
+}
+
+.polaroid__action-btn {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.polaroid--selected .polaroid__action-btn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.polaroid__action-btn:hover {
+  background: #5f4730;
+}
+
+.polaroid__action-btn svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.polaroid__open-btn {
+  top: -14px;
+  right: -14px;
+}
+
+.polaroid__rotate-btn--left {
+  bottom: -14px;
+  left: calc(50% - 34px);
+}
+
+.polaroid__rotate-btn--right {
+  bottom: -14px;
+  left: calc(50% + 4px);
+}
+
+.polaroid__img {
+  display: block;
+  width: 100%;
+  object-fit: contain;
+  background: #ddd;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}

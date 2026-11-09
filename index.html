@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Wedding Polaroids</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="toolbar">
+    <h1 class="toolbar__title">Wedding Polaroids</h1>
+    <div class="toolbar__controls">
+      <button id="zoomOutBtn" class="toolbar__btn" title="Zoom out" aria-label="Zoom out">&minus;</button>
+      <button id="resetBtn" class="toolbar__btn" title="Reset view" aria-label="Reset view">Reset</button>
+      <button id="zoomInBtn" class="toolbar__btn" title="Zoom in" aria-label="Zoom in">&plus;</button>
+    </div>
+  </header>
+
+  <p class="hint">Drag the board to pan &middot; scroll / pinch to zoom &middot; drag a photo to move it</p>
+
+  <main id="viewport" class="viewport">
+    <div id="world" class="world"></div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

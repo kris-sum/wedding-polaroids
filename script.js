@@ -254,6 +254,25 @@
     return { worldW, worldH };
   }
 
+  // Tracks every pointer on the page (capture phase runs before any stopPropagation),
+  // so multi-touch gestures can be detected regardless of which element they started on.
+  const globalPointerIds = new Set();
+  let activeDrag = null;
+
+  document.addEventListener('pointerdown', (e) => {
+    globalPointerIds.add(e.pointerId);
+    if (globalPointerIds.size > 1 && activeDrag) {
+      activeDrag.cancel();
+      activeDrag = null;
+    }
+  }, true);
+
+  function untrackGlobalPointer(e) {
+    globalPointerIds.delete(e.pointerId);
+  }
+  document.addEventListener('pointerup', untrackGlobalPointer, true);
+  document.addEventListener('pointercancel', untrackGlobalPointer, true);
+
   // --- Dragging an individual photo ---
   function makePhotoDraggable(el) {
     let dragging = false;
@@ -264,6 +283,7 @@
 
     el.addEventListener('pointerdown', (e) => {
       if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+      if (globalPointerIds.size > 1) return; // a second finger is already down elsewhere; let the board pan/pinch
       e.stopPropagation();
       dragging = true;
       el.setPointerCapture(e.pointerId);
@@ -273,6 +293,14 @@
       startY = e.clientY;
       startLeft = parseFloat(el.style.left);
       startTop = parseFloat(el.style.top);
+      activeDrag = {
+        el,
+        cancel() {
+          dragging = false;
+          el.classList.remove('polaroid--dragging');
+          try { el.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ }
+        }
+      };
     });
 
     el.addEventListener('pointermove', (e) => {
@@ -288,6 +316,7 @@
       if (!dragging) return;
       dragging = false;
       el.classList.remove('polaroid--dragging');
+      if (activeDrag && activeDrag.el === el) activeDrag = null;
       const moved = Math.hypot(e.clientX - startX, e.clientY - startY);
       if (moved < TAP_THRESHOLD) {
         selectPhoto(el);
